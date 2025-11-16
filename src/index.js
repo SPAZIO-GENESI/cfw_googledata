@@ -1,41 +1,28 @@
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+  async fetch(request, env) {  // <-- il secret viene passato come env
+    const sheetId = new URL(request.url).searchParams.get("sheet")
+    if (!sheetId) return new Response("Missing sheet parameter", { status: 400 })
 
-    const sheetId = url.searchParams.get("sheet");
-    if (!sheetId) {
-      return new Response("Missing sheet parameter", { status: 400 });
+    // Usa il secret dal binding
+    const apiKey = env.GOOGLE_API_KEY
+    if (!apiKey) return new Response("Missing GOOGLE_API_KEY secret", { status: 500 })
+
+    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Disponibili?key=${apiKey}`
+
+    try {
+      const response = await fetch(sheetUrl)
+      const data = await response.json()
+
+      return new Response(JSON.stringify(data), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "*"
+        }
+      })
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), { status: 500 })
     }
-
-    const apiKey = GOOGLE_API_KEY;
-    const range = "Disponibili";
-
-    const target = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-
-    // Richiama Google
-    const response = await fetch(target, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-		"Access-Control-Allow-Origin": "*",           // Permette qualsiasi origine
-    	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    	"Access-Control-Allow-Headers": "*"
-      }
-      // niente keepalive → evita problemi di idle
-    });
-
-    const data = await response.text();
-
-    // CORS
-    return new Response(data, {
-      status: response.status,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-        "Cache-Control": "no-store"
-      }
-    });
   }
-};
+}
