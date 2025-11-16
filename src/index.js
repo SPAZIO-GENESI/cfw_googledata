@@ -16,7 +16,10 @@ export default {
     const response = await fetch(target, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+		"Access-Control-Allow-Origin": "*",           // Permette qualsiasi origine
+    	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    	"Access-Control-Allow-Headers": "*"
       }
       // niente keepalive → evita problemi di idle
     });
