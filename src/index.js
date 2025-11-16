@@ -7,7 +7,7 @@ export default {
       return new Response("Missing sheet parameter", { status: 400 });
     }
 
-    const apiKey = env.GOOGLE_API_KEY;
+    const apiKey = GOOGLE_API_KEY;
     const range = "Disponibili";
 
     const target = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
