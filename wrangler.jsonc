@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "lucky-snow-f66c",
+	"name": "cfg_googledata",
 	"main": "src/index.js",
 	"compatibility_date": "2025-11-15",
 	"observability": {
