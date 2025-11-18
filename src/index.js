@@ -1,11 +1,25 @@
 export default {
-  async fetch(request, env) {  // <-- il secret viene passato come env
-    const sheetId = new URL(request.url).searchParams.get("sheet")
-    if (!sheetId) return new Response("Missing sheet parameter", { status: 400 })
+  async fetch(request, env) {
+    const url = new URL(request.url)
 
-    // Usa il secret dal binding
-    const apiKey = env.GOOGLE_API_KEY
-    if (!apiKey) return new Response("Missing GOOGLE_API_KEY secret", { status: 500 })
+    // Parametri dall'URL
+    const sheetId = url.searchParams.get("sheet")
+    const f = url.searchParams.get("f")
+
+    if (!sheetId) {
+      return new Response("Missing sheet parameter", { status: 400 })
+    }
+    if (!f) {
+      return new Response("Missing f parameter", { status: 400 })
+    }
+
+    // Costruisci dinamicamente il nome del secret
+    const secretName = `GOOGLE_API_KEY_${f}`
+    const apiKey = env[secretName]
+
+    if (!apiKey) {
+      return new Response(`Missing secret ${secretName}`, { status: 500 })
+    }
 
     const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Disponibili?key=${apiKey}`
 
