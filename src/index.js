@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) { 
     const url = new URL(request.url)
     const sheetId = url.searchParams.get("sheet")
-    const f = url.searchParams.get("f") // Ad esempio 'A3SD21'
+    const f = url.searchParams.get("f")
 
     console.log("Incoming request:", url.toString())
     console.log("Sheet:", sheetId, "f:", f)
@@ -12,7 +12,10 @@ export default {
     
     if (!apiKeyMapJSON) {
         console.error("Missing GOOGLE_API_KEY_M secret")
-        return new Response(JSON.stringify({ error: "Configuration Error: API Key Map secret not found." }), { status: 500 })
+        return new Response(JSON.stringify({ error: "Configuration Error: API Key Map secret not found." }), { 
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+        })
     }
 
     let apiKeyMap
@@ -21,7 +24,10 @@ export default {
         apiKeyMap = JSON.parse(apiKeyMapJSON)
     } catch (e) {
         console.error("Error parsing GOOGLE_API_KEY_M:", e)
-        return new Response(JSON.stringify({ error: "Configuration Error: API key map is invalid JSON." }), { status: 500 })
+        return new Response(JSON.stringify({ error: "Configuration Error: API key map is invalid JSON." }), { 
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+        })
     }
 
     // Cerca la chiave API utilizzando il valore dinamico di 'f'
@@ -29,36 +35,46 @@ export default {
 
     if (!apiKey) {
         console.log(`Key not found in map for f: ${f}`)
-        return new Response(JSON.stringify({ error: "Invalid 'f' parameter key or key not found in map." }), { status: 400 })
+        return new Response(JSON.stringify({ error: "Invalid 'f' parameter key or key not found in map." }), { 
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+        })
     }
 
-    console.log("Secret name:", `Key for f=${f}`, "Found:", !!apiKey)
+    console.log("Found API key for f:", f)
 
     try {
         const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Disponibili?key=${apiKey}`
+        console.log("Fetching from:", sheetsUrl)
+        
         const response = await fetch(sheetsUrl)
         
         // Controlla se la risposta API è un errore (es. chiave API non valida)
         if (!response.ok) {
             const errorData = await response.json()
             console.error("Sheets API failed:", errorData)
-            return new Response(JSON.stringify(errorData), { status: response.status, headers: { "Content-Type": "application/json" } })
+            return new Response(JSON.stringify(errorData), { 
+                status: response.status, 
+                headers: { "Content-Type": "application/json" } 
+            })
         }
 
         const data = await response.json()
-        console.log("Sheets API response sample:", JSON.stringify(data).slice(0, 200))
+        console.log("Sheets API success, rows found:", data.values ? data.values.length : 0)
         
         return new Response(JSON.stringify(data), { 
             headers: { 
                 "Content-Type": "application/json",
-                // Aggiungere headers CORS è spesso necessario per i Workers
                 "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET"
+                "Access-Control-Allow-Methods": "GET, OPTIONS"
             } 
         })
     } catch (err) {
         console.error("Error fetching Sheets:", err)
-        return new Response(JSON.stringify({ error: err.message }), { status: 500 })
+        return new Response(JSON.stringify({ error: err.message }), { 
+            status: 500,
+            headers: { "Content-Type": "application/json" } 
+        })
     }
   } 
 }
